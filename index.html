@@ -226,7 +226,7 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbxxYomByhrVqgBTu8XnjPwM
 const TEST_MODE = false;
 
 // 앱 버전 (수정할 때마다 올려주세요)
-const APP_VERSION = "v1.1.0";
+const APP_VERSION = "v1.2.0";
 const APP_VERSION_DATE = "2026.11.19";
 
 
@@ -585,6 +585,12 @@ function DetailSheet({member,onClose,canEdit,onSaved,classKey,actor}){
 // ══════════════════════════════════════════
 // 로그인 정보 저장 키 (카카오톡 인앱브라우저 포함, localStorage 사용)
 const LOGIN_SAVE_KEY = "ee63_saved_login";
+// 로그인 대상 드롭다운 [표시명, 서버로 보내는 이름]
+const LOGIN_OPTIONS = [
+  ["수지주일반","수지주일반"],["분당주일반","분당주일반"],["수지화요반","수지화요반"],
+  ["수지주일반 총무","수지주일반총무"],["분당주일반 총무","분당주일반총무"],["수지화요반 총무","수지화요반총무"],
+  ["반장","반장"],["교역자","교역자"],["관리자 (전태룡)","전태룡"]
+];
 
 function LoginScreen({onLogin}){
   const [name,setName]=useState(""), [phone,setPhone]=useState(""),
@@ -646,8 +652,8 @@ function LoginScreen({onLogin}){
   },[]);
 
   const go=()=>{
-    if(!name.trim()){setErr("이름을 입력해주세요.");return}
-    if(!phone.trim()){setErr("전화번호 뒷 4자리를 입력해주세요.");return}
+    if(!name.trim()){setErr("로그인 대상을 선택해주세요.");return}
+    if(!phone.trim()){setErr("비밀번호 4자리를 입력해주세요.");return}
     doLogin(name,phone,remember);
   };
 
@@ -674,12 +680,15 @@ function LoginScreen({onLogin}){
       TEST_MODE&&h("div",{style:{background:"#fff3e0",border:"1px solid #fb8c00",borderRadius:8,padding:"7px 14px",fontSize:11,fontWeight:700,color:"#e65100",marginBottom:16,textAlign:"center"}},
         "🧪 테스트 모드 — 아무 이름/번호로 로그인 가능"
       ),
-      h("div",{style:{fontSize:11,fontWeight:700,color:"#1a3ab0",marginBottom:6,textAlign:"left"}},"반명 (또는 이름)"),
-      h("input",{value:name,onChange:e=>setName(e.target.value),onKeyDown:e=>e.key==="Enter"&&go(),placeholder:"반명 (또는 이름)",style:{...inp,marginBottom:12}}),
-      h("div",{style:{fontSize:11,fontWeight:700,color:"#1a3ab0",marginBottom:6,textAlign:"left"}},"반총무 문의 (또는 전화번호 뒤 4자리)"),
+      h("div",{style:{fontSize:11,fontWeight:700,color:"#1a3ab0",marginBottom:6,textAlign:"left"}},"로그인 대상"),
+      h("select",{value:name,onChange:e=>setName(e.target.value),style:{...inp,marginBottom:12,cursor:"pointer",color:name?"#1a1f2e":"#8899aa"}},
+        h("option",{value:""},"선택해주세요"),
+        LOGIN_OPTIONS.map(o=>h("option",{key:o[1],value:o[1]},o[0]))
+      ),
+      h("div",{style:{fontSize:11,fontWeight:700,color:"#1a3ab0",marginBottom:6,textAlign:"left"}},"비밀번호 (4자리)"),
       h("div",{style:{position:"relative",marginBottom:10}},
         h("input",{value:phone,onChange:e=>setPhone(e.target.value),onKeyDown:e=>e.key==="Enter"&&go(),
-          type:show?"text":"password",placeholder:"반총무 문의 또는 뒷 4자리",inputMode:"numeric",maxLength:4,
+          type:show?"text":"password",placeholder:"비밀번호 4자리",inputMode:"numeric",maxLength:4,
           style:{...inp,paddingRight:40,letterSpacing:2}}),
         h("span",{onClick:()=>setShow(p=>!p),style:{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",cursor:"pointer",fontSize:18,color:"rgba(32,80,200,0.4)"}},show?"🙈":"👁")
       ),
