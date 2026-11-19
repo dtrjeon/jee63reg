@@ -226,7 +226,7 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbxxYomByhrVqgBTu8XnjPwM
 const TEST_MODE = false;
 
 // 앱 버전 (수정할 때마다 올려주세요)
-const APP_VERSION = "v1.0.1";
+const APP_VERSION = "v1.1.0";
 const APP_VERSION_DATE = "2026.11.19";
 
 
@@ -616,7 +616,7 @@ function LoginScreen({onLogin}){
         const res=await fetch(`${GAS_URL}?action=login&name=${encodeURIComponent(loginName.trim())}&phone=${encodeURIComponent(loginPhone.trim())}`);
         const data=await res.json();
         if(!data.ok){setErr(data.error||"로그인 실패");return false}
-        result={name:data.name,role:data.role,classKey:data.classKey,isAdminTeam:!!data.isAdminTeam};
+        result={name:data.name,role:data.role,classKey:data.classKey,isAdminTeam:!!data.isAdminTeam,editClass:data.editClass||""};
       }
       // 저장/삭제 처리
       try{
@@ -707,6 +707,8 @@ function OverallPanel({classData,user,onDataChange}){
   const [detail, setDetail]=useState(null);
 
   const canView=(classKey)=>user.role==="full"||user.classKey===classKey;
+  const canOpen=(classKey)=>user.role==="full"||(!!user.editClass&&user.editClass===classKey);
+  const canEditCls=(classKey)=>!!user.isAdminTeam||(!!user.editClass&&user.editClass===classKey);
 
   const toggle=(classKey,stage)=>{
     if(!canView(classKey)) return;
@@ -839,8 +841,8 @@ function OverallPanel({classData,user,onDataChange}){
                         h("tbody",null,
                           stageMembers.map((m,mi)=>
                             h("tr",{key:mi,
-                              onClick:user.role==="full"?()=>setDetail({...m,_classKey:classKey}):undefined,
-                              style:{cursor:user.role==="full"?"pointer":"default",background:mi%2===0?"transparent":"rgba(255,255,255,0.5)"}},
+                              onClick:canOpen(classKey)?()=>setDetail({...m,_classKey:classKey}):undefined,
+                              style:{cursor:canOpen(classKey)?"pointer":"default",background:mi%2===0?"transparent":"rgba(255,255,255,0.5)"}},
                               h("td",{style:{padding:"6px 10px",fontWeight:600,
                                 color:"var(--text)",fontSize:11,whiteSpace:"nowrap"}},m.name),
                               h("td",{style:{padding:"6px 10px",color:"var(--text2)",fontSize:10}},m.pos||"—"),
@@ -883,7 +885,7 @@ function OverallPanel({classData,user,onDataChange}){
       )
     ),
 
-    detail&&h(DetailSheet,{member:detail,onClose:()=>setDetail(null),canEdit:!!user.isAdminTeam,classKey:detail&&detail._classKey,actor:user.name,onSaved:()=>{onDataChange&&onDataChange();setDetail(null);}})
+    detail&&h(DetailSheet,{member:detail,onClose:()=>setDetail(null),canEdit:canEditCls(detail&&detail._classKey),classKey:detail&&detail._classKey,actor:user.name,onSaved:()=>{onDataChange&&onDataChange();setDetail(null);}})
   );
 }
 
@@ -893,7 +895,8 @@ function OverallPanel({classData,user,onDataChange}){
 function ClassPanel({classKey,cls,user,onDataChange}){
   const members=cls?.members||[], goals=cls?.goals||{}, missing=cls?.missing||{};
   const color=CLASS_COLOR[classKey];
-  const isFull=user?.role==="full";
+  const isFull=user?.role==="full"||(!!user?.editClass&&user.editClass===classKey);
+  const canEditHere=!!user?.isAdminTeam||(!!user?.editClass&&user.editClass===classKey);
   const totalGoal=Object.values(goals).reduce((a,b)=>a+b,0);
 
   const [subTab,       setSubTab]       = useState("dashboard");
@@ -1256,7 +1259,7 @@ function ClassPanel({classKey,cls,user,onDataChange}){
       subTab==="list"&&renderList(),
       subTab==="missing"&&renderMissing()
     ),
-    detail&&h(DetailSheet,{member:detail,onClose:()=>setDetail(null),canEdit:!!user.isAdminTeam,classKey:classKey,actor:user.name,onSaved:()=>{onDataChange&&onDataChange();setDetail(null);}}),
+    detail&&h(DetailSheet,{member:detail,onClose:()=>setDetail(null),canEdit:canEditHere,classKey:classKey,actor:user.name,onSaved:()=>{onDataChange&&onDataChange();setDetail(null);}}),
     h(Toast,{msg:toast}),
 
     // ── 단계별 명단 모달 ──────────────────────────────
@@ -2231,7 +2234,7 @@ function CancelledPanel({list,user,onDataChange}){
   const [pendingKey,   setPendingKey]   = useState(""); // 복구 확인 대기중인 항목
   const [busyKey,      setBusyKey]      = useState("");
   const [toast,        setToast]        = useState("");
-  const canManage = !!user.isAdminTeam;
+  const canManageItem = m => !!user.isAdminTeam || (!!user.editClass && user.editClass===m.className);
   const showToast=msg=>{setToast(msg);setTimeout(()=>setToast(""),2200)};
 
   const items = list||[];
@@ -2299,7 +2302,7 @@ function CancelledPanel({list,user,onDataChange}){
                 ),
                 m.cancelInfo&&h("div",{style:{fontSize:9,color:"#b45309",marginTop:4}},"🚫 ",m.cancelInfo)
               ),
-              canManage && h("div",{style:{flexShrink:0}},
+              canManageItem(m) && h("div",{style:{flexShrink:0}},
                 !isPending
                   ? h("button",{onClick:()=>setPendingKey(key),
                       style:{fontSize:10,fontWeight:700,color:"#2e7d32",background:"#eefaf0",border:"1px solid #bfe3c6",
