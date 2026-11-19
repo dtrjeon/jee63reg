@@ -226,7 +226,7 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbxxYomByhrVqgBTu8XnjPwM
 const TEST_MODE = false;
 
 // 앱 버전 (수정할 때마다 올려주세요)
-const APP_VERSION = "v1.0.0";
+const APP_VERSION = "v1.0.1";
 const APP_VERSION_DATE = "2026.11.19";
 
 
@@ -2379,8 +2379,8 @@ function App(){
           "63기 전도폭발훈련 신청",
           TEST_MODE&&h("span",{style:{fontSize:9,background:"#fb8c00",color:"#fff",borderRadius:4,padding:"1px 5px",marginLeft:6,fontWeight:700}},"TEST")
         ),
-        h("span",{className:"ee-topbar-title",style:{fontWeight:300,fontSize:9,opacity:0.6,display:"block",marginTop:2}},
-          `전체 ${totalAll}명`+(lastSync?` · ${lastSync.toLocaleTimeString("ko-KR")} 동기화`:"")+` · ${APP_VERSION}`
+        h("span",{className:"ee-topbar-title",style:{fontWeight:300,fontSize:9,opacity:0.6,display:"block",marginTop:2,whiteSpace:"nowrap",letterSpacing:0}},
+          `전체 ${totalAll}명`+(lastSync?` · ${lastSync.toLocaleTimeString("ko-KR",{hour:"numeric",minute:"2-digit"})}`:"")+` · ${APP_VERSION}`
         )
       ),
       h("div",{style:{display:"flex",alignItems:"center",gap:6,flexShrink:0}},
