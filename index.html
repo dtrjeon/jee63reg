@@ -226,7 +226,7 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbxxYomByhrVqgBTu8XnjPwM
 const TEST_MODE = false;
 
 // 앱 버전 (수정할 때마다 올려주세요)
-const APP_VERSION = "v1.2.1";
+const APP_VERSION = "v1.3.0";
 const APP_VERSION_DATE = "2026.11.19";
 
 
@@ -597,7 +597,8 @@ function LoginScreen({onLogin}){
         [err,setErr]=useState(""),   [show,setShow]=useState(false),
         [loading,setLoading]=useState(false),
         [remember,setRemember]=useState(true),
-        [autoTrying,setAutoTrying]=useState(true); // 자동로그인 시도 중 화면
+        [autoTrying,setAutoTrying]=useState(true), // 자동로그인 시도 중 화면
+        [opts,setOpts]=useState(LOGIN_OPTIONS); // 로그인 대상 목록 (시트 "계정" 탭 기준, 실패 시 기본 목록)
 
   // 저장된 로그인 정보 읽기
   const readSaved=()=>{
@@ -639,6 +640,14 @@ function LoginScreen({onLogin}){
       return false;
     }finally{setLoading(false)}
   };
+
+  // 계정 탭의 ID 목록 불러오기 (비밀번호는 내려받지 않음)
+  useEffect(()=>{
+    if(TEST_MODE)return;
+    fetch(`${GAS_URL}?action=accounts`).then(r=>r.json()).then(d=>{
+      if(d&&d.ok&&Array.isArray(d.list)&&d.list.length) setOpts(d.list.map(o=>[o.label,o.id]));
+    }).catch(()=>{});
+  },[]);
 
   // 최초 진입 시 저장된 정보가 있으면 자동 로그인 (카카오톡에서 재진입 시 바로 입장)
   useEffect(()=>{
@@ -683,7 +692,7 @@ function LoginScreen({onLogin}){
       h("div",{style:{fontSize:11,fontWeight:700,color:"#1a3ab0",marginBottom:6,textAlign:"left"}},"로그인 대상"),
       h("select",{value:name,onChange:e=>setName(e.target.value),style:{...inp,marginBottom:12,cursor:"pointer",color:name?"#1a1f2e":"#8899aa"}},
         h("option",{value:""},"선택해주세요"),
-        LOGIN_OPTIONS.map(o=>h("option",{key:o[1],value:o[1]},o[0]))
+        opts.map(o=>h("option",{key:o[1],value:o[1]},o[0]))
       ),
       h("div",{style:{fontSize:11,fontWeight:700,color:"#1a3ab0",marginBottom:6,textAlign:"left"}},"비밀번호 (4자리)"),
       h("div",{style:{position:"relative",marginBottom:10}},
