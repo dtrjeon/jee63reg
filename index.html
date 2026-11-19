@@ -226,7 +226,7 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbxxYomByhrVqgBTu8XnjPwM
 const TEST_MODE = false;
 
 // 앱 버전 (수정할 때마다 올려주세요)
-const APP_VERSION = "v1.3.0";
+const APP_VERSION = "v1.4.0";
 const APP_VERSION_DATE = "2026.11.19";
 
 
@@ -1301,18 +1301,27 @@ function ClassPanel({classKey,cls,user,onDataChange}){
             ),
             h("div",{style:{display:"flex",gap:6,flexShrink:0}},
               h("button",{onClick:()=>{
-                  const sorted=[...stageModal.members].sort((a,b)=>{
-                    const ai=STAGE_ORDER.indexOf(a.stage), bi=STAGE_ORDER.indexOf(b.stage);
-                    if(ai!==bi) return ai-bi;
-                    return (a.name||"").localeCompare(b.name||"","ko");
-                  });
-                  const data=sorted.map((m,i)=>({
-                    "#":i+1,"이름":m.name||"","단계":m.stage||"","직분":m.pos||"",
-                    "휴대폰":m.phone||"","소속목장":m.district||"","주소":m.address||""
-                  }));
-                  const ws=XLSX.utils.json_to_sheet(data);
+                  // 구글시트(설문지 응답 시트1) A~L 열과 동일한 열 순서·제목으로 추출 (신청일시 오름차순 = 시트 순서)
+                  const sorted=[...stageModal.members].sort((a,b)=>parseTs(a.timestamp)-parseTs(b.timestamp));
+                  const COLS=[
+                    ["타임스탬프",m=>m.timestamp],
+                    ["신청반",m=>m.className||classKey],
+                    ["신청 단계",m=>m.stage],
+                    ["이름(식별기호)",m=>m.name],
+                    ["영문명(여권 영문명 추천)",m=>m.en],
+                    ["교회 직분",m=>m.pos],
+                    ["생년월일",m=>m.dob],
+                    ["연락처",m=>m.phone],
+                    ["성별",m=>m.gender],
+                    ["주소",m=>m.address],
+                    ["제자훈련(필수과목) 수료 확인",m=>m.discipleType],
+                    ["소속 목장교회",m=>m.district],
+                  ];
+                  const data=sorted.map(m=>{const o={};COLS.forEach(([h,f])=>{o[h]=f(m)||""});return o;});
+                  const ws=XLSX.utils.json_to_sheet(data,{header:COLS.map(c=>c[0])});
+                  ws["!cols"]=[{wch:22},{wch:12},{wch:8},{wch:14},{wch:22},{wch:8},{wch:12},{wch:14},{wch:6},{wch:40},{wch:34},{wch:24}];
                   const wb=XLSX.utils.book_new();
-                  XLSX.utils.book_append_sheet(wb,ws,(stageModal.stage||"명단").slice(0,31));
+                  XLSX.utils.book_append_sheet(wb,ws,"신청자명단");
                   XLSX.writeFile(wb,`${classKey}_${stageModal.stage}_신청자명단.xlsx`);
                 },
                 style:{background:"#e8f5e9",border:"none",borderRadius:8,
